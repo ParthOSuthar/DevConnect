@@ -9,5 +9,5 @@ export default async function DashboardPage() {
     if (!session) {
         redirect('/')
     }
-    return <DashboardClient userName={session.user.name || 'User'} />
+    return <DashboardClient role={session.user.role} currentUserId={session.user.id} />
 }
