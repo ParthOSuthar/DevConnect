@@ -37,19 +37,29 @@ export default function BlogCard({
             </p>
             <p className="text-gray-800 dark:text-gray-200 flex-grow">{description}</p>
 
-            {isOwner && (
-                <div className="mt-4 flex justify-between">
-                    <Link href={`/dashboard/blogs/${id}`}>
-                        <button className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-sm">✏️ Edit</button>
-                    </Link>
-                    <button
-                        onClick={() => onDelete(id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
-                    >
-                        🗑️ Delete
+            <div className="mt-4 flex justify-between">
+                <Link href={`/dashboard/blogs/${id}/comments`}>
+                    <button className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm">
+                        💬 Comment
                     </button>
-                </div>
-            )}
+                </Link>
+
+                {isOwner && (
+                    <div className="flex gap-2">
+                        <Link href={`/dashboard/blogs/${id}`}>
+                            <button className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-sm">
+                                ✏️ Edit
+                            </button>
+                        </Link>
+                        <button
+                            onClick={() => onDelete(id)}
+                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
+                        >
+                            🗑️ Delete
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

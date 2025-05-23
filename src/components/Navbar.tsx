@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default function Navbar({ userName }: { userName: string }) {
     return (
-        <nav className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center">
+        <nav className="sticky top-0 z-50 bg-gray-900 text-white px-6 py-4 flex justify-between items-center shadow-md">
             <Link href="/dashboard">
                 <h1 className="text-xl font-bold">Dashboard</h1>
             </Link>

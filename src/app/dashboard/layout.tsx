@@ -8,10 +8,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     const session = await getServerSession(authOptions)
     const userEmail = session.user.email
     const user = await getUserByEmail(userEmail)
+    const userName = user.name || 'Test User'
 
     return (
         <div>
-            <Navbar userName={user.name} />
+            <Navbar userName={userName} />
             <main>{children}</main>
         </div>
     )
