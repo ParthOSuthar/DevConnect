@@ -5,16 +5,24 @@ import { useEffect, useState } from 'react';
 import BlogCard from './BlogCard';
 import toast from 'react-hot-toast';
 import ConfirmModal from '@/components/confirmModal';
+import ProjectCard from './ProjectCard';
+import { useSearchParams } from 'next/navigation';
 
 export default function Client({ role, currentUserId }: { role: string; currentUserId: string | null }) {
-    const [activeTab, setActiveTab] = useState<'blogs' | 'projects'>('blogs');
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    const initialTab = tabParam === 'projects' ? 'projects' : 'blogs';
+
+    const [activeTab, setActiveTab] = useState<'blogs' | 'projects'>(initialTab);
     const [blogs, setBlogs] = useState<any[]>([]);
+    const [projects, setProjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [selectedBlogId, setSelectedBlogId] = useState<string | null>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [deleteUrl, setDeleteUrl] = useState<string>('');
+    const [deleteType, setDeleteType] = useState<'blog' | 'project'>('blog');
     const [showModal, setShowModal] = useState(false);
 
-    // Fetch blogs
     const fetchBlogs = async () => {
         try {
             const res = await fetch('/api/blogs');
@@ -27,30 +35,55 @@ export default function Client({ role, currentUserId }: { role: string; currentU
         }
     };
 
-    useEffect(() => {
-        fetchBlogs();
-    }, []);
+    const fetchProjects = async () => {
+        try {
+            const res = await fetch('/api/projects');
+            const data = await res.json();
+            setProjects(data);
+        } catch (error) {
+            toast.error('Failed to load projects');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const confirmDelete = (id: string) => {
-        setSelectedBlogId(id);
+    useEffect(() => {
+        setLoading(true);
+        if (activeTab === 'blogs') {
+            fetchBlogs();
+        } else {
+            fetchProjects();
+        }
+    }, [activeTab]);
+
+    const confirmDelete = (id: string, type: 'blog' | 'project') => {
+        setSelectedId(id);
+        setDeleteType(type);
+        setDeleteUrl(`/api/${type === 'blog' ? 'blogs' : 'projects'}/${id}`);
         setShowModal(true);
     };
 
     const handleDelete = async () => {
-        if (!selectedBlogId) return;
+        if (!selectedId || !deleteUrl) return;
 
         try {
-            const res = await fetch(`/api/blogs/${selectedBlogId}`, { method: 'DELETE' });
+            const res = await fetch(deleteUrl, { method: 'DELETE' });
             if (res.ok) {
-                setBlogs(prev => prev.filter(blog => blog.id !== selectedBlogId));
-                toast.success('Blog deleted successfully!');
+                if (deleteType === 'blog') {
+                    setBlogs(prev => prev.filter(item => item.id !== selectedId));
+                    toast.success('Blog deleted successfully!');
+                } else {
+                    setProjects(prev => prev.filter(item => item.id !== selectedId));
+                    toast.success('Project deleted successfully!');
+                }
             } else {
-                toast.error('Failed to delete blog');
+                toast.error('Failed to delete');
             }
         } catch (error) {
             toast.error('Something went wrong');
         } finally {
-            setSelectedBlogId(null);
+            setSelectedId(null);
+            setDeleteUrl('');
             setShowModal(false);
         }
     };
@@ -86,13 +119,12 @@ export default function Client({ role, currentUserId }: { role: string; currentU
                         isOpen={showModal}
                         onClose={() => setShowModal(false)}
                         onConfirm={handleDelete}
-                        message="Are you sure you want to delete this blog?"
+                        message={`Are you sure you want to delete this ${deleteType}?`}
                     />
 
                     {activeTab === 'blogs' && (
                         <div>
                             <h2 className="text-xl font-semibold mb-4">📚 Blog Section</h2>
-
                             {role === 'ADMIN' && (
                                 <div className="mb-4">
                                     <Link href={'/dashboard/blogs'}>
@@ -103,7 +135,6 @@ export default function Client({ role, currentUserId }: { role: string; currentU
                                 </div>
                             )}
 
-                            {/* Blog Grid */}
                             {loading ? (
                                 <p>Loading blogs...</p>
                             ) : blogs.length === 0 ? (
@@ -121,7 +152,7 @@ export default function Client({ role, currentUserId }: { role: string; currentU
                                             authorId={blog.user.id}
                                             createdAt={blog.createdAt}
                                             currentUserId={currentUserId}
-                                            onDelete={() => confirmDelete(blog.id)}
+                                            onDelete={() => confirmDelete(blog.id, 'blog')}
                                         />
                                     ))}
                                 </div>
@@ -132,7 +163,38 @@ export default function Client({ role, currentUserId }: { role: string; currentU
                     {activeTab === 'projects' && (
                         <div>
                             <h2 className="text-xl font-semibold mb-2">🚀 Project Section</h2>
-                            <p>This section will handle all user projects.</p>
+                            {role === 'ADMIN' && (
+                                <div className="mb-4">
+                                    <Link href={'/dashboard/projects/add'}>
+                                        <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+                                            ➕ Create New Project
+                                        </button>
+                                    </Link>
+                                </div>
+                            )}
+
+                            {loading ? (
+                                <p>Loading projects...</p>
+                            ) : projects.length === 0 ? (
+                                <p>No projects found.</p>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {projects.map(project => (
+                                        <ProjectCard
+                                            key={project.id}
+                                            id={project.id}
+                                            title={project.title}
+                                            link={project.link}
+                                            description={project.description}
+                                            authorName={project.user.name || 'Unknown'}
+                                            authorId={project.user.id}
+                                            createdAt={project.createdAt}
+                                            currentUserId={currentUserId}
+                                            onDelete={() => confirmDelete(project.id, 'project')}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
